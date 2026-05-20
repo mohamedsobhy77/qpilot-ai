@@ -26,7 +26,7 @@ The platform leverages AI to accelerate the software testing lifecycle and reduc
 
 ## Dashboard
 
-![Dashboard](./screenshots/dashboard.png)
+![Dashboard](./screenshots/dashbord.png)
 
 ---
 
