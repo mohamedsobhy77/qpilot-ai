@@ -54,7 +54,7 @@ The platform leverages AI to accelerate the software testing lifecycle and reduc
 
 ---
 
-## generate automation scripts Page
+## Generate automation scripts Page
 
 ![Scripts](./screenshots/Script.png)
 
