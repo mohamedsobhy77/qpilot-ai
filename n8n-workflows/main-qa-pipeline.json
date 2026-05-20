@@ -1,0 +1,306 @@
+{
+  "name": "QPilot AI — Main QA Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "requirement-submitted",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook — Requirement Submitted",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [100, 300],
+      "webhookId": "qpilot-requirement-submitted"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Validate incoming requirement payload\nconst body = $input.all()[0].json.body || $input.all()[0].json;\n\nconst { requirement_id, requirement_title, requirement_description } = body;\n\nif (!requirement_id || !requirement_description) {\n  throw new Error('Missing required fields: requirement_id and requirement_description are required');\n}\n\nreturn [{\n  json: {\n    requirement_id,\n    requirement_title: requirement_title || 'Untitled Requirement',\n    requirement_description,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "validate-payload",
+      "name": "Validate & Extract Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 300]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/scenarios/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "requirement_id", "value": "={{ $json.requirement_id }}" }
+          ]
+        },
+        "options": {
+          "timeout": 60000,
+          "retry": { "enabled": true, "maxAttempts": 3 }
+        }
+      },
+      "id": "generate-scenarios",
+      "name": "Generate Test Scenarios",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [540, 300]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/test-cases/generate-all",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "requirement_id", "value": "={{ $('Validate & Extract Payload').item.json.requirement_id }}" }
+          ]
+        },
+        "options": {
+          "timeout": 90000,
+          "retry": { "enabled": true, "maxAttempts": 2 }
+        }
+      },
+      "id": "generate-test-cases",
+      "name": "Generate Test Cases",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 300]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ '🔍 QPilot AI: Scenarios & test cases generated for \"' + $(\\'Validate & Extract Payload\\').item.json.requirement_title + '\". Awaiting QA approval.' }}"
+            },
+            { "name": "type", "value": "slack" }
+          ]
+        }
+      },
+      "id": "notify-ready-for-review",
+      "name": "Notify — Awaiting QA Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, 300]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Workflow triggered successfully. QA outputs are being generated.', requirement_id: $(\\'Validate & Extract Payload\\').item.json.requirement_id }) }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 300]
+    },
+
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "approval-approved",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "approval-webhook",
+      "name": "Webhook — QA Approval Received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [100, 600],
+      "webhookId": "qpilot-approval-received"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/automation/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "requirement_id", "value": "={{ $json.body.requirement_id }}" }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "generate-automation",
+      "name": "Generate Playwright Scripts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [320, 600]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/integrations/github/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "requirement_id", "value": "={{ $('Webhook — QA Approval Received').item.json.body.requirement_id }}" }
+          ]
+        }
+      },
+      "id": "push-to-github",
+      "name": "Push Scripts to GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [540, 600]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/integrations/jira/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "requirement_id", "value": "={{ $('Webhook — QA Approval Received').item.json.body.requirement_id }}" }
+          ]
+        }
+      },
+      "id": "create-jira-ticket",
+      "name": "Create Jira Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 600]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL }}/api/v1/notifications/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "Bearer {{ $env.BACKEND_API_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "✅ QPilot AI: Full pipeline complete! Scripts pushed to GitHub and Jira ticket created."
+            },
+            { "name": "type", "value": "slack" }
+          ]
+        }
+      },
+      "id": "notify-complete",
+      "name": "Notify — Pipeline Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, 600]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"message\": \"Post-approval pipeline complete\"}"
+      },
+      "id": "approval-response",
+      "name": "Approval Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1200, 600]
+    }
+  ],
+
+  "connections": {
+    "Webhook — Requirement Submitted": {
+      "main": [[{ "node": "Validate & Extract Payload", "type": "main", "index": 0 }]]
+    },
+    "Validate & Extract Payload": {
+      "main": [[{ "node": "Generate Test Scenarios", "type": "main", "index": 0 }]]
+    },
+    "Generate Test Scenarios": {
+      "main": [[{ "node": "Generate Test Cases", "type": "main", "index": 0 }]]
+    },
+    "Generate Test Cases": {
+      "main": [[{ "node": "Notify — Awaiting QA Review", "type": "main", "index": 0 }]]
+    },
+    "Notify — Awaiting QA Review": {
+      "main": [[{ "node": "Webhook Response", "type": "main", "index": 0 }]]
+    },
+    "Webhook — QA Approval Received": {
+      "main": [[{ "node": "Generate Playwright Scripts", "type": "main", "index": 0 }]]
+    },
+    "Generate Playwright Scripts": {
+      "main": [[{ "node": "Push Scripts to GitHub", "type": "main", "index": 0 }]]
+    },
+    "Push Scripts to GitHub": {
+      "main": [[{ "node": "Create Jira Ticket", "type": "main", "index": 0 }]]
+    },
+    "Create Jira Ticket": {
+      "main": [[{ "node": "Notify — Pipeline Complete", "type": "main", "index": 0 }]]
+    },
+    "Notify — Pipeline Complete": {
+      "main": [[{ "node": "Approval Webhook Response", "type": "main", "index": 0 }]]
+    }
+  },
+
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": ""
+  },
+
+  "staticData": null,
+  "tags": [{ "name": "qpilot", "createdAt": "2025-01-01T00:00:00.000Z" }],
+  "active": true
+}
