@@ -1,34 +1,86 @@
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![Next.js](https://img.shields.io/badge/Next.js-Frontend-black)
+![Playwright](https://img.shields.io/badge/Playwright-Automation-blue)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM-orange)
+
 # QPilot AI
 
-AI-Powered QA Automation Platform
+AI-Powered QA Automation Platform built with FastAPI, Next.js, Playwright, and LLM integrations.
 
-QPilot AI is an end-to-end intelligent QA platform that transforms software requirements into structured QA assets using AI.
+QPilot AI transforms software requirements into intelligent QA assets including:
+- Test Scenarios
+- Test Cases
+- Playwright Automation Scripts
+- Approval Workflows
 
-The platform allows QA engineers and teams to:
+The platform leverages AI to accelerate the software testing lifecycle and reduce manual QA effort.
 
-* Submit software requirements
-* Generate test scenarios automatically
-* Generate structured test cases
-* Generate Playwright automation scripts
-* Manage approval workflows
-* Integrate with external systems such as GitHub and Slack
+---
+# Screenshots
+
+## Login Page
+
+![Login Page](./screenshots/login.png)
 
 ---
 
-# Project Overview
+## Dashboard
 
-Traditional QA workflows often require significant manual effort to:
+![Dashboard](./screenshots/dashboard.png)
 
-* Analyze requirements
-* Design test scenarios
-* Write test cases
-* Create automation scripts
+---
 
-QPilot AI accelerates this workflow by leveraging Large Language Models (LLMs) to automate large portions of the QA lifecycle.
+## Requirements Page
 
-The system provides a clean workflow:
+![Requirements Page](./screenshots/req%20page.png)
 
-Requirement → Scenarios → Test Cases → Automation Scripts
+---
+
+## Create New Requirement
+
+![New Requirement](./screenshots/new%20req.png)
+
+---
+
+## AI Scenario Generation
+
+![Scenario Generation](./screenshots/test%20scenario.png)
+
+---
+
+## Test Cases Page
+
+![Test Cases](./screenshots/testcases%20page.png)
+
+---
+
+## Workflow View
+
+![Workflow](./screenshots/workflow.png)
+
+---
+
+## Logs Monitoring
+
+![Logs](./screenshots/log.png)
+
+---
+
+
+# Why I Built This Project
+
+As a QA Engineer interested in AI-powered testing and automation, I wanted to build a platform that reduces the manual effort involved in the traditional QA lifecycle.
+
+Most QA workflows still rely heavily on manual requirement analysis, scenario design, and test case writing. I wanted to explore how Large Language Models (LLMs) could accelerate and improve this process.
+
+QPilot AI was built as an experimental MVP to combine:
+- AI-powered QA workflows
+- Modern web technologies
+- Automation engineering
+- Scalable backend architecture
+
+The goal was to create an intelligent QA assistant capable of transforming requirements into executable automation assets.
+---
 
 ---
 
@@ -311,63 +363,73 @@ JWT_SECRET=your_secret
 
 ---
 
-# Current Capabilities
+# Challenges Faced
 
-* Requirement management
-* AI scenario generation
-* AI test case generation
-* AI Playwright generation
-* JWT authentication
-* Async backend architecture
-* OpenRouter integration
-* Frontend dashboard
-* Approval workflow
+During development, several real engineering challenges were encountered and solved:
 
----
-
-# Future Enhancements
-
-Planned improvements:
-
-* Selenium support
-* Cypress support
-* Real Playwright execution
-* Jira synchronization
-* Excel export
-* Test analytics dashboard
-* AI bug prediction
-* Multi-project workspace support
-* CI/CD integration
-* Docker deployment
+- Handling invalid AI-generated JSON responses
+- Retry handling for AI rate limits and API failures
+- Managing async database operations with SQLAlchemy
+- Designing scalable FastAPI architecture
+- Frontend/backend integration challenges
+- JWT authentication and protected routes
+- Handling GitHub push protection and secret scanning
+- Managing large file cleanup from Git history
+- Structuring AI prompts for reliable outputs
+- Building stable AI generation pipelines
 
 ---
 
-# Challenges Solved
+# What I Learned
 
-During development, several engineering challenges were addressed:
+Building QPilot AI helped me gain hands-on experience with:
 
-* AI invalid JSON handling
-* Retry handling for rate limits
-* Authentication token management
-* GitHub push protection
-* Large file cleanup from Git history
-* Async database configuration
-* Frontend/backend integration
-* AI response parsing and validation
+- AI integration workflows
+- Prompt engineering techniques
+- FastAPI backend architecture
+- Async Python development
+- Authentication systems with JWT
+- React + Next.js frontend development
+- State management with Zustand
+- API integration and error handling
+- Playwright automation generation
+- Git and repository management
+- Debugging real-world integration issues
 
+This project significantly improved my understanding of how AI systems can be integrated into modern software engineering workflows.
 ---
 
-# Screenshots
 
-Add screenshots here:
 
-* Dashboard
-* Requirement creation
-* Scenario generation
-* Test case generation
-* Automation script generation
+# Architecture Diagram
 
----
+```text
+                ┌──────────────────────┐
+                │     Next.js Frontend │
+                └──────────┬───────────┘
+                           │ REST API
+                           ▼
+                ┌──────────────────────┐
+                │    FastAPI Backend   │
+                └──────────┬───────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+ ┌────────────────┐ ┌───────────────┐ ┌──────────────┐
+ │  AI Service    │ │ Authentication│ │ Database     │
+ │ OpenRouter LLM │ │ JWT Security  │ │ SQLite/Postg │
+ └────────────────┘ └───────────────┘ └──────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │ Generated QA Assets  │
+                │ Scenarios/Test Cases │
+                │ Automation Scripts   │
+                └──────────────────────┘
+```
+
+
+
 
 # Author
 
